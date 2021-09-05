@@ -21,11 +21,12 @@ contract Lottery is VRFConsumerBase, Ownable {
     bytes32 internal keyHash;
     uint256 internal fee;
 
-    mapping(bytes32 => uint256) internal mapRequestIdToLotteryId;
     mapping(uint256 => address) public mapLotteryIdToWinningAddress;
     mapping(uint256 => uint256) public mapLotteryIdToRandomNumber;
     mapping(uint256 => mapping(address => uint256))
         internal roundAddressCountTicket;
+
+    event callBackFullfill(bytes32 requestId, uint256 randomness);
 
     constructor(address _kitCoinAddr, uint256 _ticketPrice)
         public
@@ -84,7 +85,6 @@ contract Lottery is VRFConsumerBase, Ownable {
         );
         lottery_state = LOTTERY_STATE.CALCULATING_WINNER;
         bytes32 requestId = requestRandomness(keyHash, fee);
-        mapRequestIdToLotteryId[requestId] = lotteryId;
     }
 
     /**
@@ -94,19 +94,19 @@ contract Lottery is VRFConsumerBase, Ownable {
         internal
         override
     {
+        emit callBackFullfill(requestId, randomness);
         require(
             lottery_state == LOTTERY_STATE.CALCULATING_WINNER,
             "You aren't at that stage yet!"
         );
         require(randomness > 0, "random-not-found");
-        uint256 lid = mapRequestIdToLotteryId[requestId];
 
         uint256 index = randomness % players.length;
 
-        mapLotteryIdToRandomNumber[lid] = randomness;
+        mapLotteryIdToRandomNumber[lotteryId] = randomness;
         address winningAddr = players[index];
         iKitcoin.transfer(winningAddr, iKitcoin.balanceOf(address(this)));
-        mapLotteryIdToWinningAddress[lid] = winningAddr;
+        mapLotteryIdToWinningAddress[lotteryId] = winningAddr;
         players = new address[](0);
 
         lottery_state = LOTTERY_STATE.CLOSED;
