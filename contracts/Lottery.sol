@@ -43,12 +43,12 @@ contract Lottery is VRFConsumerBase, Ownable {
         fee = 0.0001 * 10**18; // 0.1 LINK (Varies by network)
     }
 
-    function getNumberOfBuyTicket(uint256 _lotteryId)
+    function getNumberOfBuyTicket(uint256 _lotteryId, address addr)
         public
         view
         returns (uint256 count)
     {
-        return roundAddressCountTicket[_lotteryId][msg.sender];
+        return roundAddressCountTicket[_lotteryId][addr];
     }
 
     function start_new_lottery() public onlyOwner {
