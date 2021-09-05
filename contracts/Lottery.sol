@@ -51,7 +51,7 @@ contract Lottery is VRFConsumerBase, Ownable {
         return roundAddressCountTicket[_lotteryId][addr];
     }
 
-    function start_new_lottery() public onlyOwner {
+    function startNewLottery() public onlyOwner {
         require(
             lottery_state == LOTTERY_STATE.CLOSED,
             "can't start a new lottery yet"
