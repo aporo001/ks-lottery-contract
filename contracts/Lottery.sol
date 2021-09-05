@@ -24,6 +24,8 @@ contract Lottery is VRFConsumerBase, Ownable {
     mapping(bytes32 => uint256) internal mapRequestIdToLotteryId;
     mapping(uint256 => address) public mapLotteryIdToWinningAddress;
     mapping(uint256 => uint256) public mapLotteryIdToRandomNumber;
+    mapping(uint256 => mapping(address => uint256))
+        internal roundAddressCountTicket;
 
     constructor(address _kitCoinAddr, uint256 _ticketPrice)
         public
@@ -39,6 +41,14 @@ contract Lottery is VRFConsumerBase, Ownable {
 
         keyHash = 0x6e75b569a01ef56d18cab6a8e71e6600d6ce853834d4a5748b720d06f878b3a4;
         fee = 0.0001 * 10**18; // 0.1 LINK (Varies by network)
+    }
+
+    function getNumberOfBuyTicket(uint256 _lotteryId)
+        public
+        view
+        returns (uint256 count)
+    {
+        return roundAddressCountTicket[_lotteryId][msg.sender];
     }
 
     function start_new_lottery() public onlyOwner {
@@ -58,6 +68,10 @@ contract Lottery is VRFConsumerBase, Ownable {
 
         iKitcoin.transferFrom(msg.sender, address(this), ticketPrice);
         players.push(msg.sender);
+
+        roundAddressCountTicket[lotteryId][msg.sender] =
+            roundAddressCountTicket[lotteryId][msg.sender] +
+            1;
     }
 
     /**
@@ -71,7 +85,6 @@ contract Lottery is VRFConsumerBase, Ownable {
         lottery_state = LOTTERY_STATE.CALCULATING_WINNER;
         bytes32 requestId = requestRandomness(keyHash, fee);
         mapRequestIdToLotteryId[requestId] = lotteryId;
-        lotteryId = lotteryId + 1;
     }
 
     /**
@@ -95,6 +108,8 @@ contract Lottery is VRFConsumerBase, Ownable {
         iKitcoin.transfer(winningAddr, iKitcoin.balanceOf(address(this)));
         mapLotteryIdToWinningAddress[lid] = winningAddr;
         players = new address[](0);
+
         lottery_state = LOTTERY_STATE.CLOSED;
+        lotteryId = lotteryId + 1;
     }
 }
